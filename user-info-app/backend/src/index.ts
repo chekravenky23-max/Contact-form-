@@ -9,14 +9,27 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
-app.use(cors());
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ''));
+}
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 app.use(express.json());
 
 // Public Endpoint: Submit User Form
 app.post('/api/submissions', async (req, res) => {
   try {
     const { name, phone, email, address, pincode } = req.body;
-    
+
     if (!name || !phone || !email || !address || !pincode) {
       return res.status(400).json({ error: 'All fields are required.' });
     }
@@ -36,7 +49,7 @@ app.post('/api/submissions', async (req, res) => {
 app.post('/api/admin/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
+
     const admin = await prisma.admin.findUnique({ where: { username } });
     if (!admin) {
       return res.status(401).json({ error: 'Invalid credentials.' });
@@ -77,7 +90,7 @@ app.get('/api/admin/submissions', authenticateAdmin, async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
     const totalCount = await prisma.userSubmission.count();
-    
+
     res.json({ totalCount, submissions });
   } catch (error) {
     console.error(error);
