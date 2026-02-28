@@ -27,8 +27,12 @@ export default function UserForm() {
             setMessage('Your information has been successfully submitted!');
             setFormData({ name: '', phone: '', email: '', address: '', pincode: '' });
         } catch (error: any) {
+            console.error('Submission error:', error);
             setStatus('error');
-            setMessage(error.response?.data?.error || 'Something went wrong. Please try again.');
+            const errorMessage = error.response?.data?.error
+                || error.message
+                || 'Something went wrong. Please try again.';
+            setMessage(`Failed: ${errorMessage}. If this persists, please contact support.`);
         }
     };
 
